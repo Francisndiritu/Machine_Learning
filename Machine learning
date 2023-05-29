@@ -1,0 +1,89 @@
+import pandas
+data = pandas.read_csv("https://modcom.co.ke/datasets/Customers.csv")
+data
+
+data.describe()
+
+data
+
+# this is a jupiter Note book
+#there are teo typed 
+# 1. classification - its when you predict  a categorical variable 
+# EXAMPLE : yes / no , email is  spam/not spam /Primary.default /not default
+# EXAMPLE :is it team A OR B,Fraud /not Fraud ,Bad /Good Nisan/toyota /BMW
+ 
+ 
+# 2. Regression - its when you want to predict a continous variable 
+# Example predict age weight hright bp temp speed profit , losses ,tax
+# Example predict ,price , salary cost.points  score . loan amount ,sales 
+ 
+ 
+# we will do classification
+#  we will use an IRIS DATASET
+ 
+import pandas
+data = pandas.read_csv("https://modcom.co.ke/datasets/iris.csv")
+data
+ 
+# Objaective Train a computer about flowers , then use it to  predict flowers in future
+
+# get basics statistics
+data.describe()
+
+# we need to train a machine learning model (ML) about flowers 
+#  step 1 : Split data into Pridictors and Predicted
+# Predictors :sepallength   sepalwidth  petallength petalwidth
+# predicted :class
+ 
+# Predicors are x , predicted is y
+ 
+array = data.values
+array
+ 
+X= array[:,0:4] # :full colons means all rows , 0:3 means the first 4 columms
+Y= array[:, 4 ]#; full colons means all rows ,4 means the fourth column
+
+# step two : Split  split x  and y again
+# x holds predictors  Predictors :sepallength   sepalwidth  petallength petalwidth
+# Y holds predicted - class
+# split to training  takes (70% of data ) and testing data  take (30 % of data )
+ 
+from sklearn import model_selection
+X_train,X_test,Y_train,Y_test = model_selection.train_test_split(X,Y,
+                                                            test_size=0.3,
+                                                            random_state=42)
+
+# STEP 3 :train the models
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+ 
+#  pick one model
+model =RandomForestClassifier()
+model.fit(X_train, Y_train) # we train with 70% of data
+
+#  step 4 : Test the model  accuracy
+predictions =model.predict(X_test)
+print('Model Predicted', predictions)
+#  we have the Y_text containing the  the flowers classes 
+print('EXPECTED', Y_test)
+ 
+# get accuracy 
+from sklearn.metrics import accuracy_score
+score = accuracy_score(Y_test, predictions)
+print('your score is ', score)
+ 
+ 
+# the models scores 97% using Gausian
+
+#  go get a flower from the farm ,take measurement of thr flower
+ 
+flower=[[0.3 , 0.2, 0.9, 0.3]] 
+#  whick flower is this ?
+outcome = model.predict(flower)
+print('your flower is likely to be' , outcome)
+ 
+# we can trust the model since  it got a over 75% in testing
