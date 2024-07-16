@@ -1,0 +1,79 @@
+//Making a cloud free composite and display it
+var composite =ee.Algorithms.Landsat.simpleComposite({
+  collection:Landsat8.filterDate('2014-01-01','2014-12-31'),
+  asFloat:true
+});
+var trueColorVis = {min:0, max:0.3,bands:['B4','B3','B2']};
+Map.addLayer(composite.clip(LBNR),trueColorVis,'composite');
+
+//computing NDVI using Map Algebra
+var nir = composite.select('B5');
+var red = composite.select('B4');
+var ndvi = (nir.subtract(red).divide(nir.add(red)));
+Map.addLayer(ndvi.clip(LBNR),{min:0, max:1,palette:['white','green']}, 'Map Algebra NDVI');
+
+//compute NDVI with function
+var ndvi2 = composite.normalizedDifference(['B5','B4']).rename('Function NDVI');
+var ndvi_barino = ndvi2.clip(LBNR);
+Map.addLayer(LBNR,{min:0, max:1,palette:['white','green']}, 'Function NDVI');
+
+//exporting NDVI to drive
+Export.image.toDrive({
+  image:LBNR,
+  description:'NDVI',
+  region:LBNR,
+  scale:30,
+})
+// Thermal Band
+ var thermal= composite.select('B10');
+var thermal_LBNR = thermal.clip(LBNR);
+Map.addLayer(thermal_LBNR, {min: 0, max: 1, palette: ['yellow','red']}, "Thermal Band");
+
+// find the min and max of NDVI
+{
+var min = ee.Number(ndvi2.reduceRegion({
+   reducer: ee.Reducer.min(),
+   geometry: LBNR,
+   scale: 30,
+   maxPixels: 1e9
+   }).values().get(0));
+print(min, 'min');
+var max = ee.Number(ndvi2.reduceRegion({
+    reducer: ee.Reducer.max(),
+   geometry: LBNR,
+   scale: 30,
+   maxPixels: 1e9
+   }).values().get(0));
+print(max, 'max')
+}
+
+//fractional vegetation
+{
+var fv = ndvi2.subtract(min).divide(max.subtract(min)).rename('FV'); 
+var fv_barino = fv.clip(LBNR);
+print(fv, 'Fractional vegetation');
+Map.addLayer(LBNR);}
+//Emissivity
+
+var a= ee.Number(0.004);
+var b= ee.Number(0.986);
+var EM=fv.multiply(a).add(b).rename('EMM');
+var imageVisParam3 = {min: 0.9865619146722164, max:0.989699971371314};
+var EM_LBNR = EM.clip(Barino_South);
+Map.addLayer(EM_LBNR, imageVisParam3,'EMM');
+
+//LST in Celsius Degree bring -273.15
+//NB: In Kelvin don't bring -273.15
+var LST = thermal.expression(
+'(Tb/(1 + (0.00115* (Tb / 1.438))*log(Ep)))-273.15', {
+ 'Tb': thermal.select('B10'),
+'Ep': EM.select('EMM')
+}).rename('LST');
+var LST_LBNR = LST.clip(LBNR);
+Map.addLayer(LST_LBNR, {min: 20.569706944223423, max:29.328077233404645, palette: [
+'040274', '040281', '0502a3', '0502b8', '0502ce', '0502e6',
+'0602ff', '235cb1', '307ef3', '269db1', '30c8e2', '32d3ef',
+'3be285', '3ff38f', '86e26f', '3ae237', 'b5e22e', 'd6e21f',
+'fff705', 'ffd611', 'ffb613', 'ff8b13', 'ff6e08', 'ff500d',
+'ff0000', 'de0101', 'c21301', 'a71001', '911003'
+ ]},'LST');
